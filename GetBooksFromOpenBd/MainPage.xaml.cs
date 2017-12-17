@@ -53,13 +53,12 @@ namespace GetBooksFromOpenBd
                 .Select((p, i) => new { Content = p, Index = i })
                 .GroupBy(ano => ano.Index / count, ano => ano.Content);
 
-            foreach (var line in isbnList.Take(1000))
+            foreach (var line in isbnList)
             {
                 var json = await GetJsonFromOpenBd(line);
                 var books = JsonConvert.DeserializeObject<List<Book>>(json);
-                Output.Text += $"{books.First().Summary.Isbn}-{books.Last().Summary.Isbn}\n";
-                var booksWithPrice = books.Where(item => item.Onix.ProductSupply.SupplyDetail.Price != null && item.Summary.Cover != "").ToList<Book>();
-                
+                var booksWithPrice = books.Where(item => item.Onix.ProductSupply.SupplyDetail.Price != null && item.Summary.Cover != "").ToList();
+
                 if (booksWithPrice.Any())
                 {
                     var str = "";
@@ -68,10 +67,13 @@ namespace GetBooksFromOpenBd
                         str +=
                             $"\"{book.Summary.Isbn}\",\"{book.Summary.Title}\",\"{book.Summary.Publisher}\",\"{book.Summary.Author}\",\"{book.Summary.Pubdate}\",\"{book.Onix.ProductSupply.SupplyDetail.Price.First().PriceAmount}\",\"{book.Summary.Cover}\"\n";
                     }
+                    Output.Text += $"{booksWithPrice.First().Summary.Isbn}-{booksWithPrice.Last().Summary.Isbn}\n";
                     var fileName = $"{booksWithPrice.First().Summary.Isbn}-{booksWithPrice.Last().Summary.Isbn}.csv";
                     await SaveFile(str, fileName);
                 }
             }
+
+            Output.Text += "完了";
             Button.IsEnabled = true;
             ProgressRing.IsActive = false;
         }
